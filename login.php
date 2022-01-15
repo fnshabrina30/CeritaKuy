@@ -1,0 +1,184 @@
+<?php 
+session_start();
+require 'functions.php';
+
+// cek cookie untuk user
+if (isset($_COOKIE['$pws5d']) && isset($_COOKIE['$ssl'])) {
+    $id = $_COOKIE['$pws5d'];
+    $key = $_COOKIE['$ssl'];
+
+    // ambil data admin berdasarkan id
+    $result = mysqli_query($conn, "SELECT username FROM user WHERE id = $id");
+    $row = mysqli_fetch_assoc($result);
+
+    // cek cookie dan username
+    if ($key === hash("sha256", $row['username'])) {
+        $_SESSION['user'] = true;
+    }
+}
+
+// cek cookie untuk admin
+if (!isset($_COOKIE['$pws5d']) && isset($_COOKIE['$ssl'])) {
+    $key = $_COOKIE['$ssl'];
+
+    // ambil data admin berdasarkan id
+    $result = mysqli_query($conn, "SELECT username FROM admin");
+    $row = mysqli_fetch_assoc($result);
+
+    // cek cookie dan username
+    if ($key === hash("sha256", $row['username'])) {
+        $_SESSION['admin'] = true;     
+    }
+}
+
+// cek session
+
+if (isset($_SESSION["admin"])) {
+    header("Location: admin");
+    exit;
+} if (isset($_SESSION["user"])) {
+    header("Location: index.php");
+    exit;
+}
+
+
+ if (isset($_POST["login"])) {
+  
+  $username = $_POST["username"];
+  $password = $_POST["password"];
+
+  $admin = query("SELECT * FROM admin");
+  foreach ($admin as $a) {}
+
+  
+  if ($username == $a["username"]) {
+    $result = mysqli_query($conn, "SELECT * FROM admin WHERE username = '$username'");
+
+
+  if (mysqli_num_rows($result) === 1 ) {
+    
+
+    $row = mysqli_fetch_assoc($result);
+    if (password_verify($password, $row["password"])) {
+
+            // set session
+
+            $_SESSION["login"] = true;
+            $_SESSION["admin"] = true;
+            $_SESSION["username"] = $username;
+
+            // cek remember me
+            if (isset($_POST['remember'])) {
+                // buat cookie
+                // $pws5d dan $ssl artinya adalah id dan username, disamarkan agar tidak mudah ditebak oleh penjahat
+                setcookie('$ssl', hash('sha256', $row['username']), time()+3600);
+            }
+
+      header("Location: admin");
+      exit;
+    }
+
+  } 
+
+} else {
+  $result = mysqli_query($conn, "SELECT * FROM user WHERE username = '$username'");
+
+
+  if (mysqli_num_rows($result) === 1 ) {
+    
+
+    $row = mysqli_fetch_assoc($result);
+    if (password_verify($password, $row["password"])) {
+
+
+            $_SESSION["login"] = true;
+            $_SESSION["user"] = true;
+            $_SESSION["username"] = $username;
+
+            // cek remember me
+            if (isset($_POST['remember'])) {
+                // buat cookie
+                // $pws5d dan $ssl artinya adalah id dan username, disamarkan agar tidak mudah ditebak oleh penjahat
+                setcookie('$pws5d', $row['id'], time()+3600);
+                setcookie('$ssl', hash('sha256', $row['username']), time()+3600);
+            }
+      
+      header("Location: index.php");
+      exit;
+    }
+  }
+}
+
+$error = true;
+  
+}
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Icon dari Fontawesome -->
+    <script src="https://kit.fontawesome.com/348c676099.js" crossorigin="anonymous"></script>
+    <title>CeritaKuy</title>
+    <style>
+        #content {
+            width: 100%;
+            padding: 0 350px;
+        }
+        @media screen and (max-width: 1000px) {
+            #content {
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main>
+        <div id="content">
+
+            
+            <?php if (isset($error)) : ?>
+            <center>
+                <p style="color: #E30A0A;"><b>Username / Password Salah!</b> <i class="fas fa-times-circle"></i></p>
+            </center>
+            <?php endif; ?>
+
+            <div class="flex" style="display: flex; margin-top: 100px">
+
+                <img src="images/login-page.jpg" alt="" width="300px" height="340px" style="flex-grow: 1; margin: 30px 50px 20px -50px;">
+
+                <br>
+                
+                <article class="card" style="flex-grow: 1; margin: 30px -60px 40px 20px;">
+                    <h2 class="judul">Login</h2>
+                    <form action="" method="post">
+                        <div class="jarak">
+                             <label for="username">Username</label>
+                             <input type="text" id="username" name="username" placeholder="Masukkan Username" required style="background-color: lightpink;">
+                        </div>
+                        <div class="jarak">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" placeholder="Masukkan Password" required style="background-color: lightpink">
+                        </div>
+                        <div class="jarak">
+                            <input type="checkbox" id="remember" name="remember">
+                            <label for="remember">Remember Me</label>    
+                        </div>
+                        <button type="submit" name="login" class="btn" style="width: 100%;">Login</button>
+                    </form>
+                </article>
+            </div>
+
+            <center>Belum mempunyai akun? <a href="register.php">Registrasi Disini</a></center>
+        </div>
+    </main>
+    
+
+</body>
+</html>
